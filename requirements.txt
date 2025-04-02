@@ -1,0 +1,15 @@
+opencv-python
+torch
+numpy
+matplotlib
+roboflow
+ultralytics
+albumentations
+
+
+fastapi
+gradio
+uvicorn
+python-multipart
+Pillow
+pandas
