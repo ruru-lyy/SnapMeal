@@ -13,3 +13,8 @@ uvicorn
 python-multipart
 Pillow
 pandas
+
+sentence-transformers
+pandas
+scikit-learn
+tensorflow
