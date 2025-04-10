@@ -50,7 +50,7 @@ def identify_ingredients(image_path: str) -> Tuple[List[str], Union[np.ndarray, 
         return [], None
 
 if __name__ == '__main__':
-    test_image_path = "assets//demo.jpeg"  
+    test_image_path = "assets//demo_non_veg2.png"  
     if os.path.exists(test_image_path):
         ingredients, annotated_img = identify_ingredients(test_image_path)
         print(f"Identified ingredients in {test_image_path}: {ingredients}")
