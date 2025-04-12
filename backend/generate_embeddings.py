@@ -32,7 +32,7 @@ if __name__ == "__main__":
     print("Generating recipe embeddings...")
     recipe_embeddings = generate_recipe_embeddings(df)
 
-    # Save embeddings to a JSON file
+    
     output_path = 'recipe_embeddings.json'
     with open(output_path, 'w') as f:
         json.dump(recipe_embeddings, f)
