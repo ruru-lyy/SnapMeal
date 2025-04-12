@@ -143,4 +143,14 @@ python gradio_app.py
 This is more than a project — it's a machine that eats vision and serves intelligence.
 Designed with ambition, coded with precision. 🍽️
 
-Made with love (and Tensor cores) by ruru-lyy 💖
+Made with love (and Tensor cores) by Niru 💖
+
+---
+
+## 🧠 Author
+
+**Nirupama Laishram**  
+Data Analyst & Aspiring Data Engineer | Bangalore  
+🔗 [LinkedIn](https://www.linkedin.com/in/nirupama-l-a14179221/) 
+
+---
