@@ -1,156 +1,124 @@
-# 🥗 SnapMeal: AI-Powered Recipe Recommender with Computer Vision & NLP
 
-> *From Fridge to Feast — An intelligent system that "sees" your ingredients and crafts the perfect dish.*
+# SnapMeal: AI-Powered Recipe Recommender Using Vision and Language
 
-SnapMeal is a smart, end-to-end meal recommendation system that uses **deep learning**, **computer vision**, and **natural language processing** to identify ingredients from an image and recommend recipes tailored to the user's dietary preferences. It integrates a fine-tuned **YOLOv8 model**, a **BERT-based semantic search engine**, and a sleek **Gradio-powered user interface**.
+> From raw ingredients to a tailored meal plan 
 
----
-
-## 🧭 Table of Contents
-- [🚀 Overview](#-overview)
-- [🧠 Core Components](#-core-components)
-  - [1. Ingredient Detection (YOLOv8)](#1-ingredient-detection-yolov8)
-  - [2. Recipe Recommendation Engine (BERT + Fuzzy Logic)](#2-recipe-recommendation-engine-bert--fuzzy-logic)
-  - [3. Gradio Interface](#3-gradio-interface)
-- [📦 Project Structure](#-project-structure)
-- [🛠️ Setup & Installation](#️-setup--installation)
-- [📚 Future Work](#-future-work)
+SnapMeal combines computer vision and NLP to bridge the gap between what's in your kitchen and what you can cook. The system is built using a fine-tuned YOLOv8m object detector for ingredient recognition, Sentence-BERT for semantic recipe retrieval, and a modular interface developed in Gradio.
 
 ---
 
-## 🚀 Overview
+## Overview
 
-SnapMeal is not just a recipe app — it’s a system that:
-- 📸 Accepts a **photo of your raw ingredients**
-- 🧠 Identifies the ingredients via a **fine-tuned YOLOv8m object detector**
-- 🧾 Uses **BERT embeddings** to semantically search a dataset of real-world recipes
-- 🍱 Filters results using **fuzzy logic** based on your preferences (diet, cuisine, difficulty)
-- 💬 Interacts with users via an intuitive **Gradio interface**
+SnapMeal is a lightweight yet intelligent system designed to:
 
-It's built for **speed**, **modularity**, and **extensibility** — perfect for both personal use and as a resume-worthy portfolio project.
+* Take a user-uploaded image of raw ingredients
+* Detect ingredients using a fine-tuned YOLOv8m model
+* Embed recipes using Sentence-BERT and retrieve relevant matches via cosine similarity
+* Refine suggestions using a fuzzy logic layer based on dietary and cuisine preferences
+* Deliver results through a simple Gradio front-end
+
+It’s structured to be fast, interpretable, and extensible
 
 ---
 
-## 🧠 Core Components
+## Core Components
 
-### 1. Ingredient Detection (YOLOv8)
+### 1. Ingredient Detection (YOLOv8m)
 
-> *Trained to see what's in your fridge — literally.*
+I opted for YOLOv8m after testing multiple variants from the YOLO family and others like SSD and EfficientDet. YOLOv8m struck the right balance i.e., good performance on food detection without requiring heavy GPU resources. Given my hardware limitations, this model was more realistic to fine-tune. It also offered a simpler training and deployment cycle compared to other object detectors.
 
-SnapMeal uses **YOLOv8m** from Ultralytics, fine-tuned on a custom dataset of food ingredients.
+The model was trained using transfer learning. Initial layers were frozen to retain general visual features, while deeper layers were fine-tuned on a custom dataset of labeled ingredient images. The dataset had to be curated to address class imbalance (e.g., some vegetables were underrepresented in public datasets like COCO).
 
-- ✅ **Transfer Learning**: Frozen initial layers to preserve general features from COCO, fine-tuned later layers on food images.
-- 📊 **Balanced Dataset**: Combined datasets to address class imbalance (e.g., more samples for "spring onion", underrepresented in COCO).
-- 🏋️ **Training Setup**:
-  - Image Size: 640x640  
-  - Epochs: 30  
-  - Batch Size: 8  
-  - Optimized for CPU (low-resource friendly)  
-- 🔖 Output: Returns a list of detected ingredients with confidence scores.
+Training Specs:
 
-> YOLOv8m was chosen for its trade-off between speed and accuracy, especially on constrained hardware.
+* Image Size: 640x640
+* Epochs: 30
+* Batch Size: 8
+* Trained on local machine with RTX GPU, optimized for lower memory usage
+
+The output is a ranked list of predicted ingredients with bounding boxes and confidence scores.
 
 ---
 
 ### 2. Recipe Recommendation Engine (BERT + Fuzzy Logic)
 
-> *Where NLP meets your taste buds.*
+This module links vision outputs to natural language essentially turning detected objects into a meaningful meal.
 
-The recommendation engine works in two layers:
+#### a. Semantic Search with BERT
 
-#### 🔍 **a. Semantic Search with BERT**
-- Recipe descriptions are embedded using `Sentence-BERT`.
-- Detected ingredients are converted into text queries.
-- Similarity is computed using **cosine similarity** in the embedding space.
-- Top-N recipes are shortlisted.
+I used Sentence-BERT (all-MiniLM-L6-v2) for encoding both recipe descriptions and ingredient queries. The smaller BERT variant gave decent semantic representations without excessive latency or memory usage.
 
-#### 🔁 **b. Fuzzy Filtering**
-- Uses **fuzzy logic rules** to filter based on:
-  - Diet type (e.g., vegan, keto)
-  - Cuisine (e.g., Indian, Mediterranean)
-  - Time/Complexity (e.g., under 30 minutes)
-- Recipes are ranked on a combined score:  
-  `final_score = 0.7 * cosine_similarity + 0.3 * fuzzy_score`
+Cosine similarity is used to identify the top-k semantically similar recipes from a pre-embedded dataset. Simpler keyword methods or TF-IDF weren’t sufficient bec they missed context, especially when ingredients had alternative names or forms (e.g., "chickpeas" vs "garbanzo").
 
-This hybrid approach allows flexibility and interpretability — even if BERT returns perfect cosine matches, the fuzzy layer ensures personalization.
+#### b. Fuzzy Rule-Based Filtering
+
+The top-N results are filtered through fuzzy logic rules, allowing personalization without retraining. This layer checks:
+
+* Dietary preference (vegan, keto, etc.)
+* Cuisine type (e.g., Indian, Asian-fusion)
+* Time/difficulty constraints
+
+The scoring formula:
+final\_score = 0.7 × semantic\_similarity + 0.3 × fuzzy\_logic\_score
+
+This hybrid approach was chosen because it offers semantic accuracy with user-specific filtering without needing a complex recommendation model.
 
 ---
 
 ### 3. Gradio Interface
 
-> *Talk to your meal assistant — no terminal needed.*
+The user interface, built using Gradio, serves as the front-facing application. Users can:
 
-SnapMeal offers a clean **Gradio UI** that:
-- Accepts user-uploaded food images 📷
-- Asks optional inputs like:
-  - Preferred cuisine
-  - Dietary restrictions
-  - Cooking time
-- Displays:
-  - Recognized ingredients
-  - Top 3 recommended recipes with name, ingredients, and instructions
+* Upload a photo
+* Enter optional filters like diet, cuisine, or cooking time
+* View detected ingredients and top 3 recipe matches (with ingredients and instructions)
 
-The UI binds everything together into a single experience — user-friendly, visually elegant, and ready for demo.
+The Gradio UI made rapid prototyping easier, and it integrates seamlessly with Python backend logic. The goal was usability, not just model performance.
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 <pre><code>SnapMeal/ 
 ├── backend/ 
-│ ├── RAW_recipes.csv # Recipe dataset 
-│ ├── recipe_embeddings.json # BERT-encoded vectors 
-│ └── ingredient_identification.py # Scoring logic 
-│ └── recipe_generator.py 
-├── gradio_app.py # Launches the interface
+│ ├── RAW_recipes.csv              # Main recipe dataset  
+│ ├── recipe_embeddings.json       # Precomputed BERT vectors 
+│ ├── ingredient_identification.py # Vision-based detection and parsing  
+│ └── recipe_generator.py          # Semantic matching and filtering logic
+├── gradio_app.py                  # Frontend launcher
 ├── models/ 
-| ├── model1.pt
-| ├── model2.pt
+│ ├── yolov8m.pt                   # Fine-tuned model weights
 ├── notebooks/ 
-│ └── model_training.ipynb # EDA and model experiments 
+│ └── model_training.ipynb         # Training and evaluation notebooks
 ├── assets/ 
-│ └── demo_images/ # Sample input images 
-├── requirements.txt # All dependencies 
-└── System_Architecture.png # Visual system design </code></pre>
-
+│ └── demo_images/                 # Sample inputs
+├── requirements.txt               # Dependencies
+└── System_Architecture.png        # System diagram</code></pre>
 
 ---
 
-## 🛠️ Setup & Installation
+## Setup & Installation
 
 ```bash
-# Clone repo
 git clone https://github.com/ruru-lyy/SnapMeal.git
 cd SnapMeal
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the Gradio app
 python gradio_app.py
 ```
 
-## 📚 Future Work
+---
 
-🍳 Add step-by-step cooking video generation (text-to-video)
+## Future Work
 
-🔬 Model explainability for detected ingredients & recipe reasoning
-
-🌐 Host on Hugging Face Spaces or Streamlit Cloud
-
-📱 Mobile app version using Flutter + TensorFlow Lite
-
-This is more than a project — it's a machine that eats vision and serves intelligence.
-Designed with ambition, coded with precision. 🍽️
-
-Made with love (and Tensor cores) by Niru 💖
+* Add explainability layer for both vision and language outputs
+* Integrate text-to-video cooking guides (for recipe steps)
+* Host using Hugging Face Spaces or Streamlit Cloud
+* Explore mobile deployment with Flutter and TensorFlow Lite
 
 ---
 
-## 🧠 Author
+## Author
 
-**Nirupama Laishram**  
-Data Analyst & Aspiring Data Engineer | Bangalore  
-🔗 [LinkedIn](https://www.linkedin.com/in/nirupama-l-a14179221/) 
-
----
+Nirupama Laishram
+Data Analyst & Aspiring Data Engineer — Bangalore
+LinkedIn: [Nirupama Laishram](https://www.linkedin.com/in/nirupama-l-a14179221/)
